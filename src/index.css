@@ -745,8 +745,17 @@ input[type=range] {
   min-width: 0;
 }
 
-.center-col > .panel:first-child { flex: 1.18; }
-.center-col > .panel:last-child  { flex: 1; }
+.center-col > .camera-panel {
+  flex: 0.92 1 0;
+  height: 0;
+  min-height: 0;
+}
+
+.center-col > .live-map-expand-anchor {
+  flex: 1.2 1 0;
+  height: 0;
+  min-height: 0;
+}
 
 /* ---- Rover ID ---- */
 .rover-id {
@@ -1563,12 +1572,39 @@ input[type=range] {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow: hidden;
 }
 
-.mapping-main > .map-panel {
-  flex: 1;
+.mapping-main > .mapping-heading {
+  flex: 0 0 auto;
+}
+
+.mapping-main > .live-map-expand-anchor:not(.expanded) {
+  flex: 1 1 0;
+  width: 100%;
+  height: auto;
   min-height: 0;
 }
+
+.mapping-main
+  > .live-map-expand-anchor:not(.expanded)
+  > .live-building-map {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.mapping-main
+  > .live-map-expand-anchor:not(.expanded)
+  .live-grid-canvas {
+  flex: 1 1 0;
+  width: 100%;
+  height: auto;
+  min-height: 420px;
+}
+
 
 .mapping-main .map-canvas {
   min-height: 0;
@@ -3052,4 +3088,1165 @@ input[type=range] {
 .deployment-total-row b {
   color: var(--green);
   font-size: 10px;
+}
+
+/* =========================================================
+   SLAM MAPPING CONFIRMATION
+   ========================================================= */
+
+.mapping-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(2, 9, 7, 0.78);
+  backdrop-filter: blur(8px);
+}
+
+.mapping-confirm-modal {
+  width: min(430px, 100%);
+  padding: 28px;
+  text-align: center;
+  border: 1px solid rgba(27, 185, 129, 0.38);
+  background: linear-gradient(145deg, #0a1c16, #06110d);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.55),
+    0 0 35px rgba(27, 185, 129, 0.08);
+}
+
+.mapping-confirm-icon {
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 16px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--green);
+  border-radius: 50%;
+  color: var(--green);
+  background: rgba(27, 185, 129, 0.08);
+  box-shadow: 0 0 24px rgba(27, 185, 129, 0.18);
+}
+
+.mapping-confirm-modal h2 {
+  margin: 8px 0;
+  color: var(--soft);
+}
+
+.mapping-confirm-modal p {
+  max-width: 340px;
+  margin: 0 auto 22px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.mapping-confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* =========================================================
+   EMPTY MAP STATE
+   ========================================================= */
+
+.pre-map-canvas.map-empty {
+  display: grid;
+  place-items: center;
+  background: #06130f;
+}
+
+.map-empty-start {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  padding: 18px 24px;
+  border: 1px dashed rgba(27, 185, 129, 0.28);
+  color: var(--green);
+  background: transparent;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    transform 0.2s;
+}
+
+.map-empty-start:hover {
+  transform: translateY(-2px);
+  border-color: var(--green);
+  background: rgba(27, 185, 129, 0.06);
+}
+
+.map-empty-start span {
+  color: var(--muted);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+}
+
+.map-empty-start b {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 600px) {
+  .mapping-confirm-modal {
+    padding: 22px 16px;
+  }
+
+  .mapping-confirm-actions {
+    flex-direction: column;
+  }
+
+  .mapping-confirm-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* =========================================================
+   CAMERA FLASHLIGHT
+   ========================================================= */
+
+.camera-panel.flashlight-active .camera-feed {
+  filter: brightness(1.38) contrast(1.08);
+}
+
+.camera-panel.night.flashlight-active .camera-feed {
+  filter:
+    grayscale(1)
+    sepia(1)
+    hue-rotate(65deg)
+    saturate(3)
+    brightness(1.05);
+}
+
+.camera-panel.thermal.flashlight-active .camera-feed {
+  filter:
+    grayscale(1)
+    sepia(1)
+    hue-rotate(200deg)
+    saturate(4)
+    brightness(1.15)
+    contrast(1.2);
+}
+
+.flashlight-beam {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse at 50% 54%,
+      rgba(255, 248, 205, 0.62) 0%,
+      rgba(255, 241, 175, 0.28) 24%,
+      rgba(255, 234, 150, 0.08) 48%,
+      transparent 72%
+    );
+  mix-blend-mode: screen;
+  animation: flashlightPowerOn 0.25s ease-out;
+}
+
+.flashlight-status {
+  position: absolute;
+  right: 14px;
+  top: 13px;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 7px;
+  border: 1px solid rgba(255, 224, 120, 0.6);
+  color: #ffe078;
+  background: rgba(10, 18, 14, 0.75);
+  font: 600 8px var(--font-mono);
+}
+
+@keyframes flashlightPowerOn {
+  from {
+    opacity: 0;
+    transform: scale(0.65);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* =========================================================
+   ONE-SECOND LENS CLEANING
+   ========================================================= */
+
+.lens-clean-animation {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  overflow: hidden;
+  pointer-events: none;
+  background: rgba(140, 220, 200, 0.05);
+}
+
+.lens-clean-animation::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      115deg,
+      transparent 0 28px,
+      rgba(190, 255, 235, 0.08) 29px 31px
+    );
+  animation: lensWaterFade 1s ease-out forwards;
+}
+
+.lens-wiper {
+  position: absolute;
+  left: -15%;
+  top: -20%;
+  width: 8px;
+  height: 145%;
+  border-radius: 8px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(210, 255, 242, 0.9),
+    rgba(65, 210, 166, 0.8),
+    transparent
+  );
+  box-shadow:
+    0 0 18px rgba(120, 255, 215, 0.7),
+    30px 0 45px rgba(140, 255, 220, 0.18);
+  transform: rotate(18deg);
+  animation: cleanLensSweep 1s ease-in-out forwards;
+}
+
+.lens-clean-animation span {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  padding: 5px 9px;
+  border: 1px solid rgba(27, 185, 129, 0.5);
+  color: var(--green);
+  background: rgba(5, 18, 14, 0.88);
+  font: 600 8px var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.quick-actions button.active-command {
+  border-color: var(--green);
+  color: var(--green);
+  background: rgba(27, 185, 129, 0.12);
+  box-shadow: inset 0 0 12px rgba(27, 185, 129, 0.08);
+}
+
+@keyframes cleanLensSweep {
+  0% {
+    left: -15%;
+  }
+
+  50% {
+    left: 52%;
+  }
+
+  100% {
+    left: 115%;
+  }
+}
+
+@keyframes lensWaterFade {
+  0% {
+    opacity: 0.8;
+    filter: blur(3px);
+  }
+
+  100% {
+    opacity: 0;
+    filter: blur(0);
+  }
+}
+
+/* =========================================================
+   LIVE SLAM GRID CONSTRUCTION
+   ========================================================= */
+
+.live-map-expand-anchor {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+
+.live-map-expand-anchor > .panel {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.live-map-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 990;
+  background: rgba(1, 7, 5, 0.76);
+  backdrop-filter: blur(7px);
+  pointer-events: none;
+}
+
+.live-map-expand-anchor.expanded {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  z-index: 1000;
+  width: min(70vmin, 820px);
+  height: min(70vmin, 820px);
+  transform: translate(-50%, -50%);
+}
+
+.live-map-expand-anchor.expanded > .live-building-map {
+  position: relative;
+  z-index: 1001;
+  width: 100%;
+  height: 100%;
+  background: var(--surface);
+  box-shadow:
+    0 30px 100px rgba(0, 0, 0, 0.68),
+    0 0 50px rgba(27, 185, 129, 0.14);
+}
+
+.live-map-expand-hint {
+  position: absolute;
+  right: 12px;
+  top: 9px;
+  z-index: 15;
+  color: var(--muted);
+  font: 600 7px var(--font-mono);
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+
+.live-grid-canvas {
+  position: relative;
+  flex: 1 1 0;
+  height: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(27, 185, 129, 0.27);
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(18, 53, 42, 0.18),
+      transparent 62%
+    ),
+    #04100c;
+  cursor: crosshair;
+}
+
+.live-map-expand-anchor.expanded .live-grid-canvas {
+  min-height: 0;
+  height: 100%;
+}
+
+.live-grid-lines {
+  position: absolute;
+  inset: 0;
+  opacity: 0.64;
+  background-image:
+    linear-gradient(
+      rgba(61, 173, 135, 0.11) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(61, 173, 135, 0.11) 1px,
+      transparent 1px
+    );
+  background-size: 6.25% 8.333%;
+}
+
+.live-grid-empty {
+  display: grid;
+  place-items: center;
+}
+
+.live-route-svg {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  filter: drop-shadow(0 0 5px rgba(27, 185, 129, 0.58));
+}
+
+.live-mapped-edge {
+  fill: none;
+  stroke: #28d99a;
+  stroke-width: 0.8;
+  stroke-linecap: round;
+  stroke-dasharray: 2.1 1.6;
+  opacity: 0.94;
+}
+
+.live-mapped-edge.branch {
+  stroke: #58c7a1;
+  stroke-width: 0.72;
+}
+
+.live-mapped-edge.connector {
+  stroke: #89b9a8;
+  stroke-width: 0.62;
+  stroke-dasharray: 1.2 1.8;
+}
+
+.live-mapped-edge.currently-mapping {
+  stroke: #72ffd0;
+  animation: liveRouteMovement 0.7s linear infinite;
+}
+
+@keyframes liveRouteMovement {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+/* Rover */
+
+.live-rover {
+  position: absolute;
+  z-index: 12;
+  width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  border: 1px solid #43f4b5;
+  border-radius: 50%;
+  color: #43f4b5;
+  background: #06261c;
+  box-shadow:
+    0 0 0 5px rgba(35, 218, 154, 0.08),
+    0 0 22px rgba(35, 218, 154, 0.65);
+  transition:
+    left 1.8s linear,
+    top 1.8s linear;
+  animation: liveRoverPulse 1.4s ease-in-out infinite;
+}
+
+.live-rover svg {
+  transform: rotate(38deg);
+}
+
+@keyframes liveRoverPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px rgba(35, 218, 154, 0.1),
+      0 0 14px rgba(35, 218, 154, 0.48);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 10px rgba(35, 218, 154, 0),
+      0 0 28px rgba(35, 218, 154, 0.82);
+  }
+}
+
+/* Rotating LiDAR scan near rover */
+
+.lidar-scan-radius {
+  position: absolute;
+  z-index: 2;
+  width: 86px;
+  height: 86px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(45, 231, 165, 0.23);
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(44, 234, 164, 0.24),
+    transparent 20%,
+    transparent 100%
+  );
+  transition:
+    left 1.8s linear,
+    top 1.8s linear;
+  animation: rotateLidar 1.8s linear infinite;
+}
+
+@keyframes rotateLidar {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* Two cells ahead scanning */
+
+.scan-frontier-cell {
+  position: absolute;
+  z-index: 5;
+  width: 6.25%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border: 1px dashed rgba(99, 255, 202, 0.72);
+  background: rgba(54, 220, 164, 0.1);
+  box-shadow:
+    inset 0 0 13px rgba(54, 220, 164, 0.1),
+    0 0 12px rgba(54, 220, 164, 0.16);
+  pointer-events: none;
+}
+
+.scan-frontier-cell.first {
+  animation: scanCellPulse 0.8s ease-in-out infinite;
+}
+
+.scan-frontier-cell.second {
+  opacity: 0.55;
+  animation: scanCellPulse 0.8s 0.2s ease-in-out infinite;
+}
+
+@keyframes scanCellPulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 0.95;
+  }
+}
+
+/* Possible direction discovery */
+
+.direction-discovery {
+  position: absolute;
+  z-index: 10;
+  width: 80px;
+  height: 80px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.direction-discovery i {
+  position: absolute;
+  width: 23px;
+  height: 23px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(90, 244, 192, 0.48);
+  color: #67f5c3;
+  background: rgba(6, 34, 25, 0.9);
+  font-style: normal;
+  font-size: 13px;
+  animation: directionPulse 0.9s ease-in-out infinite alternate;
+}
+
+.direction-up {
+  left: 29px;
+  top: 0;
+}
+
+.direction-left {
+  left: 0;
+  bottom: 5px;
+}
+
+.direction-right {
+  right: 0;
+  bottom: 5px;
+}
+
+@keyframes directionPulse {
+  from {
+    opacity: 0.35;
+    transform: scale(0.82);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+/* Discovered feature icons */
+
+.live-map-feature {
+  position: absolute;
+  z-index: 9;
+  width: 23px;
+  height: 23px;
+  display: grid;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: rgba(4, 22, 16, 0.95);
+  animation: featureDiscovery 0.45s ease-out both;
+}
+
+.live-map-feature.safe {
+  color: var(--green);
+}
+
+.live-map-feature.warning {
+  color: var(--amber);
+}
+
+.live-map-feature.info {
+  color: #78bda5;
+}
+
+.live-map-feature span {
+  position: absolute;
+  left: 27px;
+  top: 1px;
+  width: max-content;
+  max-width: 150px;
+  padding: 4px 6px;
+  border: 1px solid rgba(45, 151, 114, 0.3);
+  color: var(--soft);
+  background: rgba(3, 18, 13, 0.94);
+  font: 600 7px var(--font-mono);
+  letter-spacing: 0.03em;
+}
+
+@keyframes featureDiscovery {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.3);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Labels and status */
+
+.live-entrance-label {
+  position: absolute;
+  left: 4%;
+  top: 92%;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: 1px solid rgba(27, 185, 129, 0.27);
+  color: var(--green);
+  background: rgba(4, 18, 13, 0.9);
+  font: 600 7px var(--font-mono);
+}
+
+.live-scan-status {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  z-index: 15;
+  min-width: 145px;
+  padding: 8px 10px;
+  border: 1px solid rgba(27, 185, 129, 0.28);
+  background: rgba(3, 17, 12, 0.9);
+  font-family: var(--font-mono);
+  pointer-events: none;
+}
+
+.live-scan-status span {
+  display: block;
+  color: var(--muted);
+  font-size: 7px;
+  letter-spacing: 0.06em;
+}
+
+.live-scan-status b {
+  display: block;
+  margin: 2px 0;
+  color: var(--green);
+  font-size: 18px;
+}
+
+.live-scan-status small {
+  display: block;
+  color: var(--soft);
+  font-size: 7px;
+}
+
+.live-map-legend {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 15;
+  display: flex;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid rgba(27, 185, 129, 0.2);
+  background: rgba(3, 17, 12, 0.88);
+  font: 600 7px var(--font-mono);
+  color: var(--muted);
+}
+
+.live-map-legend span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-rover,
+.legend-route,
+.legend-scan {
+  width: 7px;
+  height: 7px;
+  display: inline-block;
+  border-radius: 50%;
+}
+
+.legend-rover {
+  background: #49f5b8;
+  box-shadow: 0 0 6px #49f5b8;
+}
+
+.legend-route {
+  background: #27bd89;
+}
+
+.legend-scan {
+  border: 1px dashed #6df1c3;
+  background: rgba(109, 241, 195, 0.12);
+}
+
+.map-empty-start {
+  position: relative;
+  z-index: 5;
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  padding: 20px 27px;
+  border: 1px dashed rgba(27, 185, 129, 0.34);
+  color: var(--green);
+  background: rgba(5, 25, 18, 0.48);
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition:
+    transform 0.2s,
+    border-color 0.2s,
+    background 0.2s;
+}
+
+.map-empty-start:hover {
+  transform: translateY(-3px);
+  border-color: var(--green);
+  background: rgba(27, 185, 129, 0.09);
+}
+
+.map-empty-start span {
+  color: var(--muted);
+  font-size: 7px;
+  letter-spacing: 0.12em;
+}
+
+.map-empty-start b {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 800px) {
+  .live-map-expand-anchor.expanded {
+    width: 92vw;
+    height: 75vh;
+  }
+
+  .live-map-feature span {
+    display: none;
+  }
+
+  .live-map-legend {
+    gap: 5px;
+  }
+}
+
+
+/* =========================================================
+   REALISTIC ROVER FLASHLIGHT
+   ========================================================= */
+
+.camera-panel.flashlight-active .camera-feed {
+  filter: brightness(1.45) contrast(1.08) saturate(1.08);
+  box-shadow:
+    inset 0 0 90px rgba(255, 239, 170, 0.18),
+    inset 0 -50px 100px rgba(255, 218, 110, 0.12);
+}
+
+/* Wide warm light spread */
+.flashlight-beam {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse 46% 72% at 50% 57%,
+      rgba(255, 250, 213, 0.76) 0%,
+      rgba(255, 243, 179, 0.48) 18%,
+      rgba(255, 224, 129, 0.22) 39%,
+      rgba(255, 210, 95, 0.08) 58%,
+      transparent 76%
+    );
+  mix-blend-mode: screen;
+  animation: roverLightStart 0.32s ease-out;
+}
+
+/* Strong central hotspot */
+.flashlight-beam::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  width: 26%;
+  height: 42%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      ellipse,
+      rgba(255, 255, 238, 0.82) 0%,
+      rgba(255, 245, 196, 0.44) 35%,
+      transparent 74%
+    );
+  filter: blur(5px);
+}
+
+/* Soft cone coming from rover/camera */
+.flashlight-beam::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -14%;
+  width: 74%;
+  height: 96%;
+  transform: translateX(-50%);
+  clip-path: polygon(46% 100%, 54% 100%, 88% 0%, 12% 0%);
+  background: linear-gradient(
+    to top,
+    rgba(255, 244, 190, 0.38),
+    rgba(255, 235, 155, 0.14) 48%,
+    transparent 90%
+  );
+  filter: blur(8px);
+  opacity: 0.75;
+}
+
+/* Slight realistic light vibration */
+.camera-panel.flashlight-active .flashlight-beam {
+  animation:
+    roverLightStart 0.32s ease-out,
+    roverLightFlicker 4s ease-in-out infinite;
+}
+
+.camera-panel.flashlight-active .tunnel-ribs {
+  filter: brightness(1.28);
+}
+
+.camera-panel.flashlight-active .feed-noise {
+  opacity: 0.94;
+}
+
+.flashlight-status {
+  color: #ffe89a;
+  border-color: rgba(255, 229, 132, 0.72);
+  background: rgba(15, 18, 10, 0.84);
+  box-shadow: 0 0 12px rgba(255, 221, 103, 0.16);
+}
+
+@keyframes roverLightStart {
+  from {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes roverLightFlicker {
+  0%,
+  94%,
+  100% {
+    opacity: 1;
+  }
+
+  96% {
+    opacity: 0.88;
+  }
+
+  98% {
+    opacity: 0.96;
+  }
+}
+
+/* Preserve special camera modes */
+.camera-panel.night.flashlight-active .camera-feed {
+  filter:
+    grayscale(1)
+    sepia(1)
+    hue-rotate(65deg)
+    saturate(2.7)
+    brightness(1.05)
+    contrast(1.1);
+}
+
+.camera-panel.thermal.flashlight-active .camera-feed {
+  filter:
+    grayscale(1)
+    sepia(1)
+    hue-rotate(200deg)
+    saturate(4)
+    brightness(1.04)
+    contrast(1.22);
+}
+
+/* =========================================================
+   LIGHT MODE — LIVE SLAM MAP
+   ========================================================= */
+
+.app.light .live-grid-canvas {
+  border-color: rgba(5, 120, 84, 0.3);
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(24, 185, 128, 0.1),
+      transparent 62%
+    ),
+    #eef5f1;
+}
+
+.app.light .live-grid-lines {
+  opacity: 0.7;
+  background-image:
+    linear-gradient(
+      rgba(8, 105, 74, 0.12) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(8, 105, 74, 0.12) 1px,
+      transparent 1px
+    );
+}
+
+/* Discovered routes */
+.app.light .live-mapped-edge {
+  stroke: #008c62;
+  filter: drop-shadow(0 0 2px rgba(0, 140, 98, 0.3));
+}
+
+.app.light .live-mapped-edge.branch {
+  stroke: #169b71;
+}
+
+.app.light .live-mapped-edge.connector {
+  stroke: #527f70;
+}
+
+/* Rover */
+.app.light .live-rover {
+  color: #007f59;
+  border-color: #008c62;
+  background: #dcf8ed;
+  box-shadow:
+    0 0 0 5px rgba(0, 140, 98, 0.1),
+    0 0 18px rgba(0, 140, 98, 0.42);
+}
+
+/* LiDAR circle */
+.app.light .lidar-scan-radius {
+  border-color: rgba(0, 140, 98, 0.32);
+  background: conic-gradient(
+    from 0deg,
+    rgba(0, 166, 112, 0.23),
+    transparent 22%,
+    transparent 100%
+  );
+}
+
+/* Two-cell scan boxes */
+.app.light .scan-frontier-cell {
+  border-color: rgba(0, 128, 88, 0.65);
+  background: rgba(0, 166, 112, 0.1);
+  box-shadow:
+    inset 0 0 12px rgba(0, 166, 112, 0.1),
+    0 0 8px rgba(0, 128, 88, 0.16);
+}
+
+/* Feature icons */
+.app.light .live-map-feature {
+  background: #f5fffb;
+  box-shadow: 0 3px 10px rgba(0, 75, 52, 0.15);
+}
+
+.app.light .live-map-feature.safe {
+  color: #008c62;
+}
+
+.app.light .live-map-feature.info {
+  color: #315f50;
+}
+
+.app.light .live-map-feature.warning {
+  color: #bd7800;
+}
+
+/* Feature labels */
+.app.light .live-map-feature span {
+  color: #24443a;
+  border-color: rgba(0, 120, 83, 0.25);
+  background: rgba(248, 255, 252, 0.96);
+  box-shadow: 0 3px 10px rgba(0, 70, 48, 0.1);
+}
+
+/* Progress box */
+.app.light .live-scan-status {
+  border-color: rgba(0, 128, 88, 0.28);
+  background: rgba(248, 255, 252, 0.94);
+}
+
+.app.light .live-scan-status span,
+.app.light .live-scan-status small {
+  color: #61756e;
+}
+
+.app.light .live-scan-status b {
+  color: #008c62;
+}
+
+/* Entrance label */
+.app.light .live-entrance-label {
+  color: #007f59;
+  border-color: rgba(0, 128, 88, 0.28);
+  background: rgba(248, 255, 252, 0.95);
+}
+
+/* Legend */
+.app.light .live-map-legend {
+  color: #526a62;
+  border-color: rgba(0, 128, 88, 0.24);
+  background: rgba(248, 255, 252, 0.95);
+}
+
+/* Direction indicators */
+.app.light .direction-discovery i {
+  color: #007f59;
+  border-color: rgba(0, 128, 88, 0.4);
+  background: rgba(234, 250, 244, 0.96);
+}
+
+/* Expanded map background */
+.app.light
+  .live-map-expand-anchor.expanded
+  > .live-building-map {
+  background: #ffffff;
+  box-shadow:
+    0 30px 100px rgba(20, 55, 43, 0.25),
+    0 0 45px rgba(0, 140, 98, 0.12);
+}
+
+.app.light .live-map-backdrop {
+  background: rgba(225, 235, 231, 0.76);
+}
+
+/* 180-degree camera turnaround */
+
+.camera-panel.turned-around .feed-noise,
+.camera-panel.turned-around .tunnel-ribs {
+  transform: scaleX(-1);
+  transform-origin: center;
+  transition: transform 0.65s ease-in-out;
+}
+
+.rear-view-status {
+  position: absolute;
+  top: 13px;
+  right: 14px;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border: 1px solid rgba(27, 185, 129, 0.55);
+  color: var(--green);
+  background: rgba(5, 18, 14, 0.88);
+  font: 600 8px var(--font-mono);
+  letter-spacing: 0.06em;
+}
+
+.camera-panel.turned-around .rear-view-status svg {
+  transform: rotate(180deg);
+}
+
+/* Picture capture confirmation */
+
+.camera-panel.flash .camera-feed::after {
+  z-index: 30;
+}
+
+.quick-actions button:disabled {
+  cursor: wait;
+  opacity: 0.75;
+}
+/* Premium SLAM route styling */
+
+.live-route-svg {
+  filter: drop-shadow(0 0 4px rgba(28, 226, 166, 0.18));
+}
+
+.live-mapped-edge {
+  stroke-width: 0.48;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition:
+    stroke-dashoffset 0.3s linear,
+    opacity 0.3s ease;
+}
+
+.live-mapped-edge.primary {
+  stroke: #19dca0;
+  stroke-width: 0.62;
+  filter: drop-shadow(0 0 2px rgba(25, 220, 160, 0.65));
+}
+
+.live-mapped-edge.branch {
+  stroke: #55cdb0;
+  stroke-width: 0.46;
+  opacity: 0.82;
+}
+
+.live-mapped-edge.connector {
+  stroke: #9adacb;
+  stroke-width: 0.38;
+  opacity: 0.7;
+  stroke-dasharray: 2.2 1.3;
+}
+
+.live-mapped-edge.currently-mapping {
+  stroke: #33ffc0;
+  stroke-dasharray: 3 2;
+  animation: liveTunnelFlow 0.75s linear infinite;
+}
+
+@keyframes liveTunnelFlow {
+  to {
+    stroke-dashoffset: -5;
+  }
 }
