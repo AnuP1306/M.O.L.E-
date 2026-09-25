@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { LanguageSwitcher } from './components/LanguageSwitcher';
+import { useTranslation } from 'react-i18next';
 import { Activity, AlertTriangle, BatteryCharging, Camera as CameraIcon, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, CircleDot, CloudRain, Crosshair, Droplets, Flame, Gauge, Globe2, HardHat, Image as ImageIcon, Info, LifeBuoy, Map as MapIcon, MapPin, Maximize2, Moon, Navigation, Pause, Play, Radio, Search, Settings2, ShieldAlert, Signal, Sun, Thermometer, Timer, UserRound, Users, Wind, X, Zap } from 'lucide-react';
 
 type Page = 'Overview' | 'Camera' | 'Mapping' | 'Environment' | 'Mission Log';
@@ -45,8 +47,17 @@ function App({ sessionSlot }: { sessionSlot?: React.ReactNode }) {
 }
 
 function TopNav({ sessionSlot, page, setPage, dark, setDark, missionTime, missionActive, onStop, onStart }: { sessionSlot?: React.ReactNode; page: Page; setPage: (p: Page) => void; dark: boolean; setDark: (v: boolean) => void; missionTime: string; missionActive: boolean; onStop: () => void; onStart: () => void }) {
+ const { t } = useTranslation();
   const links: Page[] = ['Overview', 'Camera', 'Mapping', 'Environment', 'Mission Log'];
-  return <header className="topbar"><div className="brand"><div className="brand-mark">M.</div><div><strong>M.O.L.E.</strong><small>MINE OPERATIONS & LIFE-SAVING EXPLORER</small></div></div><nav>{links.map((link) => <button className={page === link ? 'active' : ''} onClick={() => setPage(link)} key={link}>{link}</button>)}</nav><div className="top-actions">{sessionSlot}<div className="mission-clock"><span>MISSION TIME</span><b>{missionTime}</b></div><StatusBadge text={missionActive ? "ACTIVE" : "ENDED"} tone={missionActive ? "safe" : "warning"} /><button className="icon-btn theme-btn" onClick={() => setDark(!dark)} title="Toggle theme">{dark ? <Sun size={14} /> : <Moon size={14} />}<span>{dark ? 'LIGHT' : 'DARK'}</span></button><button className={`emergency ${missionActive ? "" : "start-mission"}`} onClick={missionActive ? onStop : onStart}>{missionActive ? <ShieldAlert size={14} /> : <Play size={14} />} {missionActive ? "EMERGENCY STOP" : "START MISSION"}</button></div></header>;
+  return <header className="topbar"><div className="brand"><div className="brand-mark">M.</div><div><strong>M.O.L.E.</strong><small>MINE OPERATIONS & LIFE-SAVING EXPLORER</small></div></div><nav>{links.map((link) => <button className={page === link ? 'active' : ''} onClick={() => setPage(link)} key={link}>
+  {t(`navigation.${{
+    Overview: 'overview',
+    Camera: 'camera',
+    Mapping: 'mapping',
+    Environment: 'environment',
+    'Mission Log': 'missionLog',
+  }[link]}`)}
+</button>)}</nav><div className="top-actions">{sessionSlot}<LanguageSwitcher /><div className="mission-clock"><span>MISSION TIME</span><b>{missionTime}</b></div><StatusBadge text={missionActive ? "ACTIVE" : "ENDED"} tone={missionActive ? "safe" : "warning"} /><button className="icon-btn theme-btn" onClick={() => setDark(!dark)} title="Toggle theme">{dark ? <Sun size={14} /> : <Moon size={14} />}<span>{dark ? 'LIGHT' : 'DARK'}</span></button><button className={`emergency ${missionActive ? "" : "start-mission"}`} onClick={missionActive ? onStop : onStart}>{missionActive ? <ShieldAlert size={14} /> : <Play size={14} />} {missionActive ? "EMERGENCY STOP" : "START MISSION"}</button></div></header>;
 }
 function StatusBadge({ text, tone }: { text: string; tone: Severity | 'blue' }) { return <span className={`badge ${tone}`}>{text}</span>; }
 function Panel({ title, icon, children, className = '' }: { title: string; icon?: React.ReactNode; children: React.ReactNode; className?: string }) { return <section className={`panel ${className}`}><div className="panel-title"><span>{icon}</span><b>{title}</b><i /></div>{children}</section>; }
