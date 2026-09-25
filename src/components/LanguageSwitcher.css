@@ -1,0 +1,43 @@
+.language-switcher {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.language-switcher__select {
+  height: 29px;
+  min-width: 92px;
+  padding: 0 24px 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--soft);
+  font: 500 var(--fs-topbar-button) var(--font-mono);
+  cursor: pointer;
+  outline: none;
+}
+
+.language-switcher__select:hover,
+.language-switcher__select:focus-visible {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.language-switcher__select:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+.language-switcher__select option {
+  background: var(--surface);
+  color: var(--soft);
+}
+
+@media (max-width: 850px) {
+  .language-switcher__select {
+    min-width: 76px;
+    padding-left: 6px;
+    padding-right: 4px;
+  }
+}
