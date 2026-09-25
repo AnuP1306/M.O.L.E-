@@ -1,0 +1,89 @@
+{
+  "language": {
+    "label": "Language",
+    "english": "English",
+    "hindi": "हिन्दी"
+  },
+  "navigation": {
+    "overview": "Overview",
+    "camera": "Camera",
+    "mapping": "Mapping",
+    "environment": "Environment",
+    "missionLog": "Mission Log"
+  },
+  "actions": {
+    "login": "Login",
+    "logout": "Logout",
+    "back": "Back",
+    "cancel": "Cancel",
+    "save": "Save",
+    "continue": "Continue"
+  },
+  "landing": {
+    "officialLogin": "OFFICIAL LOGIN",
+    "requestAccess": "REQUEST OFFICIAL ACCESS",
+    "eyebrow": "AI-POWERED UNDERGROUND COAL MINE SAFETY & RESCUE",
+    "subtitle": "MINE OPERATIONS & LIFE-SAVING EXPLORER",
+    "description": "An operations system for underground coal mines. M.O.L.E. brings mine mapping, daily worker deployment, environmental monitoring, remote rover operations, survivor detection and emergency rescue coordination into a single control-room console.",
+    "capabilitiesHeading": "System capabilities",
+    "rolesHeading": "ACCESS IS ISSUED BY ROLE",
+    "roles": {
+      "SITE_MANAGER": {
+        "label": "SITE MANAGER",
+        "description": "Configures the mine, its layout and monitoring setup."
+      },
+      "DISPATCHER": {
+        "label": "DISPATCHER",
+        "description": "Manages daily underground personnel deployment."
+      },
+      "RESCUE_OPERATOR": {
+        "label": "RESCUE OPERATOR",
+        "description": "Runs the rover and rescue console during an emergency."
+      }
+    },
+    "footer": "UNDERGROUND COAL MINE SAFETY & RESCUE",
+    "capabilities": {
+      "mapping": {
+        "title": "UNDERGROUND MINE MAPPING",
+        "description": "Keep an up-to-date layout of galleries, shafts and junctions."
+      },
+      "workers": {
+        "title": "DAILY WORKER DEPLOYMENT",
+        "description": "Record which personnel are deployed to which underground areas each shift."
+      },
+      "environment": {
+        "title": "ENVIRONMENTAL MONITORING",
+        "description": "Watch methane, CO, oxygen, temperature and water-ingress readings."
+      },
+      "rover": {
+        "title": "REMOTE ROVER OPERATIONS",
+        "description": "Drive the rescue rover from the surface with camera, LiDAR and drill controls."
+      },
+      "survivors": {
+        "title": "SURVIVOR DETECTION",
+        "description": "Flag possible survivors from thermal and vital-sign cues."
+      },
+      "rescue": {
+        "title": "EMERGENCY RESCUE COORDINATION",
+        "description": "Coordinate hazards, rescue targets and missions during an incident."
+      }
+    }
+  },
+ "login": {
+  "home": "HOME",
+  "title": "Official login",
+  "officerId": "OFFICER / EMPLOYEE ID",
+  "idPlaceholder": "Enter your ID",
+  "password": "PASSWORD",
+  "passwordPlaceholder": "Enter your password",
+  "showPassword": "Show password",
+  "hidePassword": "Hide password",
+  "rememberDevice": "REMEMBER DEVICE",
+  "submit": "LOGIN",
+  "requestAccess": "REQUEST OFFICIAL ACCESS",
+  "forgotPassword": "FORGOT PASSWORD",
+  "resetHelp": "To reset your password, contact your system administrator.",
+  "missingCredentials": "ENTER YOUR OFFICER / EMPLOYEE ID AND PASSWORD",
+  "invalidCredentials": "AUTHENTICATION FAILED · CHECK ID AND PASSWORD"
+}
+}
