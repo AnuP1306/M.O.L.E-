@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
+import { Brand } from './components/Brand';
 import { useTranslation } from 'react-i18next';
 import { Activity, AlertTriangle, BatteryCharging, Camera as CameraIcon, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, CircleDot, CloudRain, Crosshair, Droplets, Flame, Gauge, Globe2, HardHat, Image as ImageIcon, Info, LifeBuoy, Map as MapIcon, MapPin, Maximize2, Moon, Navigation, Pause, Play, Radio, Search, Settings2, ShieldAlert, Signal, Sun, Thermometer, Timer, UserRound, Users, Wind, X, Zap } from 'lucide-react';
 
@@ -32,6 +33,7 @@ const missions: Mission[] = [
 ];
 
 function App({ sessionSlot }: { sessionSlot?: React.ReactNode }) {
+  const { t } = useTranslation();
   const [page, setPage] = useState<Page>('Overview');
   const [dark, setDark] = useState(true);
   const [missionSeconds, setMissionSeconds] = useState(2 * 3600 + 45 * 60 + 12);
@@ -41,23 +43,50 @@ function App({ sessionSlot }: { sessionSlot?: React.ReactNode }) {
   const missionTime = new Date(missionSeconds * 1000).toISOString().substring(11, 19);
   return <div className={dark ? 'app dark' : 'app light'}>
     <TopNav sessionSlot={sessionSlot} page={page} setPage={setPage} dark={dark} setDark={setDark} missionTime={missionTime} missionActive={missionActive} onStop={() => setStopped(true)} onStart={() => { setMissionSeconds(0); setMissionActive(true); }} />
-    {stopped && <div className="stop-overlay"><div className="stop-modal"><ShieldAlert size={42} /><p>EMERGENCY STOP ACTIVE</p><span>All rover movement and drilling commands are paused.</span><div className="stop-actions"><button className="btn primary" onClick={() => setStopped(false)}>Resume operations</button><button className="btn end-mission" onClick={() => { setMissionSeconds(0); setMissionActive(false); setStopped(false); }}>End mission</button></div></div></div>}
+    {stopped && (
+      <div className="stop-overlay">
+        <div className="stop-modal">
+          <ShieldAlert size={42} />
+          <p>{t('rescueNav.stopTitle')}</p>
+          <span>{t('rescueNav.stopDescription')}</span>
+          <div className="stop-actions">
+            <button className="btn primary" onClick={() => setStopped(false)}>{t('rescueNav.resume')}</button>
+            <button className="btn end-mission" onClick={() => { setMissionSeconds(0); setMissionActive(false); setStopped(false); }}>{t('rescueNav.endMission')}</button>
+          </div>
+        </div>
+      </div>
+    )}
     <main className="page-wrap">{page === 'Overview' && <Overview />}{page === 'Camera' && <CameraPage />}{page === 'Mapping' && <MappingPage />}{page === 'Environment' && <EnvironmentPage />}{page === 'Mission Log' && <MissionLog />}</main>
   </div>;
 }
 
 function TopNav({ sessionSlot, page, setPage, dark, setDark, missionTime, missionActive, onStop, onStart }: { sessionSlot?: React.ReactNode; page: Page; setPage: (p: Page) => void; dark: boolean; setDark: (v: boolean) => void; missionTime: string; missionActive: boolean; onStop: () => void; onStart: () => void }) {
- const { t } = useTranslation();
+  const { t } = useTranslation();
   const links: Page[] = ['Overview', 'Camera', 'Mapping', 'Environment', 'Mission Log'];
-  return <header className="topbar"><div className="brand"><div className="brand-mark">M.</div><div><strong>M.O.L.E.</strong><small>MINE OPERATIONS & LIFE-SAVING EXPLORER</small></div></div><nav>{links.map((link) => <button className={page === link ? 'active' : ''} onClick={() => setPage(link)} key={link}>
-  {t(`navigation.${{
-    Overview: 'overview',
-    Camera: 'camera',
-    Mapping: 'mapping',
-    Environment: 'environment',
-    'Mission Log': 'missionLog',
-  }[link]}`)}
-</button>)}</nav><div className="top-actions">{sessionSlot}<LanguageSwitcher /><div className="mission-clock"><span>MISSION TIME</span><b>{missionTime}</b></div><StatusBadge text={missionActive ? "ACTIVE" : "ENDED"} tone={missionActive ? "safe" : "warning"} /><button className="icon-btn theme-btn" onClick={() => setDark(!dark)} title="Toggle theme">{dark ? <Sun size={14} /> : <Moon size={14} />}<span>{dark ? 'LIGHT' : 'DARK'}</span></button><button className={`emergency ${missionActive ? "" : "start-mission"}`} onClick={missionActive ? onStop : onStart}>{missionActive ? <ShieldAlert size={14} /> : <Play size={14} />} {missionActive ? "EMERGENCY STOP" : "START MISSION"}</button></div></header>;
+  const navKeys: Record<Page, string> = {
+    Overview: 'overview', Camera: 'camera', Mapping: 'mapping',
+    Environment: 'environment', 'Mission Log': 'missionLog',
+  };
+  return (
+    <header className="topbar">
+      <Brand />
+      <nav>{links.map((link) => <button key={link} className={page === link ? 'active' : ''} onClick={() => setPage(link)}>{t(`navigation.${navKeys[link]}`)}</button>)}</nav>
+      <div className="top-actions">
+        {sessionSlot}
+        <LanguageSwitcher />
+        <div className="mission-clock"><span>{t('rescueNav.missionTime')}</span><b>{missionTime}</b></div>
+        <StatusBadge text={t(missionActive ? 'rescueNav.active' : 'rescueNav.ended')} tone={missionActive ? 'safe' : 'warning'} />
+        <button className="icon-btn theme-btn" onClick={() => setDark(!dark)} title={t('rescueNav.toggleTheme')}>
+          {dark ? <Sun size={14} /> : <Moon size={14} />}
+          <span>{t(dark ? 'rescueNav.light' : 'rescueNav.dark')}</span>
+        </button>
+        <button className={`emergency ${missionActive ? '' : 'start-mission'}`} onClick={missionActive ? onStop : onStart}>
+          {missionActive ? <ShieldAlert size={14} /> : <Play size={14} />}
+          {t(missionActive ? 'rescueNav.emergencyStop' : 'rescueNav.startMission')}
+        </button>
+      </div>
+    </header>
+  );
 }
 function StatusBadge({ text, tone }: { text: string; tone: Severity | 'blue' }) { return <span className={`badge ${tone}`}>{text}</span>; }
 function Panel({ title, icon, children, className = '' }: { title: string; icon?: React.ReactNode; children: React.ReactNode; className?: string }) { return <section className={`panel ${className}`}><div className="panel-title"><span>{icon}</span><b>{title}</b><i /></div>{children}</section>; }
@@ -73,7 +102,42 @@ function Telemetry() { return <Panel title="Rover telemetry" icon={<Radio size={
 function EnvironmentSensors() { return <Panel title="Environmental sensors" icon={<Wind size={13} />}><div className="sensor-summary"><Stat label="TEMP" value="42.5" unit="°C" tone="red" /><Stat label="HUMIDITY" value="88" unit="%" /></div><div className="subhead">ATMOSPHERIC COMPOSITION <span>LIVE</span></div><div className="gas-grid"><Gas name="CH4" value="4.2" unit="%" status="HIGH LEL" severity="critical" /><Gas name="CO" value="12" unit="ppm" status="NOMINAL" severity="safe" /><Gas name="CO2" value="0.1" unit="%" status="NOMINAL" severity="safe" /><Gas name="O2" value="19.1" unit="%" status="LOW" severity="warning" /></div></Panel>; }
 function Gas({ name, value, unit, status, severity }: { name: string; value: string; unit: string; status: string; severity: Severity }) { return <div className={`gas ${severity}`}><span>{name}</span><b>{value}<small>{unit}</small></b><StatusBadge text={status} tone={severity} /></div>; }
 
-function CameraPanel({ compact = false, full = false }: { compact?: boolean; full?: boolean }) { const [mode, setMode] = useState<'normal' | 'night' | 'thermal'>('normal'); const [zoom, setZoom] = useState(1); const [flash, setFlash] = useState(false); const [pan, setPan] = useState({ x: 0, y: 0 }); const [clean, setClean] = useState(false); const move = (x: number, y: number) => setPan((p) => ({ x: Math.max(-12, Math.min(12, p.x + x)), y: Math.max(-10, Math.min(10, p.y + y)) })); const night = mode === 'night'; const thermal = mode === 'thermal'; const title = full ? 'Camera / CAM 01' : compact ? 'Thermal camera / CAM 01' : 'Normal camera / CAM 01'; return <Panel title={title} icon={<CameraIcon size={13} />} className={`camera-panel ${night ? 'night' : ''} ${thermal ? 'thermal' : ''} ${flash ? 'flash' : ''} ${full ? 'full' : ''}`}><div className="camera-feed" style={{ transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)` }}><div className="feed-noise" /><div className="tunnel-ribs" /><div className="feed-rover"><Crosshair size={28} /><span>{thermal ? 'THERMAL FEED' : night ? 'NIGHT VISION' : 'LIVE FEED'}</span></div><div className="feed-readout"><b>REC <i /></b><span>ZOOM {(zoom * 100).toFixed(0)}%</span><span>PAN {pan.x > 0 ? '+' : ''}{pan.x}° / {pan.y > 0 ? '+' : ''}{pan.y}°</span></div></div><div className="camera-controls"><div className="control-row"><button className="btn small" onClick={() => setZoom(Math.min(1.8, zoom + .1))}>ZOOM IN</button><button className="btn small" onClick={() => setZoom(Math.max(.7, zoom - .1))}>ZOOM OUT</button><button className="btn small" onClick={() => setMode(mode === 'night' ? 'normal' : 'night')}>{night ? <Sun size={12} /> : <Moon size={12} />} {night ? 'NORMAL' : 'NIGHT VISION'}</button><button className={`btn small ${thermal ? 'success-btn' : ''}`} onClick={() => setMode(thermal ? 'normal' : 'thermal')}><Thermometer size={12} /> {thermal ? 'NORMAL CAM' : 'THERMAL CAM'}</button><button className="btn small" onClick={() => { setFlash(true); window.setTimeout(() => setFlash(false), 350); }}>TAKE PICTURE</button><button className={`btn small ${clean ? 'success-btn' : ''}`} onClick={() => { setClean(true); window.setTimeout(() => setClean(false), 1500); }}>{clean ? <Check size={12} /> : <Settings2 size={12} />} {clean ? 'LENS CLEAN' : 'CLEAN LENS'}</button></div><DPad onMove={move} /></div></Panel>; }
+function CameraPanel({ compact = false, full = false }: { compact?: boolean; full?: boolean }) {
+  const { t } = useTranslation();
+  const [mode, setMode] = useState<'normal' | 'night' | 'thermal'>('normal');
+  const [zoom, setZoom] = useState(1);
+  const [flash, setFlash] = useState(false);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [clean, setClean] = useState(false);
+  const move = (x: number, y: number) => setPan((current) => ({
+    x: Math.max(-12, Math.min(12, current.x + x)),
+    y: Math.max(-10, Math.min(10, current.y + y)),
+  }));
+  const night = mode === 'night';
+  const thermal = mode === 'thermal';
+  const title = t(full ? 'rescueCamera.camera' : compact ? 'rescueCamera.thermalCamera' : 'rescueCamera.normalCamera');
+
+  return (
+    <Panel title={title} icon={<CameraIcon size={13} />} className={`camera-panel ${night ? 'night' : ''} ${thermal ? 'thermal' : ''} ${flash ? 'flash' : ''} ${full ? 'full' : ''}`}>
+      <div className="camera-feed" style={{ transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)` }}>
+        <div className="feed-noise" /><div className="tunnel-ribs" />
+        <div className="feed-rover"><Crosshair size={28} /><span>{t(thermal ? 'rescueCamera.thermalFeed' : night ? 'rescueCamera.nightVision' : 'rescueCamera.liveFeed')}</span></div>
+        <div className="feed-readout"><b>REC <i /></b><span>ZOOM {(zoom * 100).toFixed(0)}%</span><span>PAN {pan.x > 0 ? '+' : ''}{pan.x}° / {pan.y > 0 ? '+' : ''}{pan.y}°</span></div>
+      </div>
+      <div className="camera-controls">
+        <div className="control-row">
+          <button className="btn small" onClick={() => setZoom(Math.min(1.8, zoom + .1))}>{t('rescueCamera.zoomIn')}</button>
+          <button className="btn small" onClick={() => setZoom(Math.max(.7, zoom - .1))}>{t('rescueCamera.zoomOut')}</button>
+          <button className="btn small" onClick={() => setMode(mode === 'night' ? 'normal' : 'night')}>{night ? <Sun size={12} /> : <Moon size={12} />} {t(night ? 'rescueCamera.normal' : 'rescueCamera.nightVision')}</button>
+          <button className={`btn small ${thermal ? 'success-btn' : ''}`} onClick={() => setMode(thermal ? 'normal' : 'thermal')}><Thermometer size={12} /> {t(thermal ? 'rescueCamera.normalCam' : 'rescueCamera.thermalCam')}</button>
+          <button className="btn small" onClick={() => { setFlash(true); window.setTimeout(() => setFlash(false), 350); }}>{t('rescueCamera.takePicture')}</button>
+          <button className={`btn small ${clean ? 'success-btn' : ''}`} onClick={() => { setClean(true); window.setTimeout(() => setClean(false), 1500); }}>{clean ? <Check size={12} /> : <Settings2 size={12} />} {t(clean ? 'rescueCamera.lensClean' : 'rescueCamera.cleanLens')}</button>
+        </div>
+        <DPad onMove={move} />
+      </div>
+    </Panel>
+  );
+}
 function DPad({ onMove, stop = false, disabled = false }: { onMove: (x: number, y: number) => void; stop?: boolean; disabled?: boolean }) { return <div className={`dpad ${disabled ? 'disabled' : ''}`}><button onClick={() => onMove(0, -2)} disabled={disabled}><ChevronUp size={14} /></button><button onClick={() => onMove(-2, 0)} disabled={disabled}><ChevronLeft size={14} /></button><button className="dpad-center" onClick={() => onMove(stop ? 0 : -100, stop ? 0 : -100)} disabled={disabled}>{stop ? 'STOP' : <Crosshair size={12} />}</button><button onClick={() => onMove(2, 0)} disabled={disabled}><ChevronRight size={14} /></button><button onClick={() => onMove(0, 2)} disabled={disabled}><ChevronDown size={14} /></button></div>; }
 
 const mapVariants: Record<string, { viable: string; possible: string; blocked: string[]; nodes: { type: string; x: string; y: string; label: string }[]; pathLabel: string }> = {
