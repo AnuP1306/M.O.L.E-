@@ -1,15 +1,19 @@
-/* Same brand block as the dashboard top bar (re-uses the existing .brand styles). */
+import { useTranslation } from 'react-i18next';
+
 export function Brand({ onClick }: { onClick?: () => void }) {
+  const { t } = useTranslation();
+
   const inner = (
     <>
       <div className="brand-mark">M.</div>
       <div>
         <strong>M.O.L.E.</strong>
-        <small>MINE OPERATIONS & LIFE-SAVING EXPLORER</small>
+        <small>{t('brand.fullName')}</small>
       </div>
     </>
   );
+
   return onClick
-    ? <button className="brand brand-link" onClick={onClick} title="Home">{inner}</button>
+    ? <button className="brand brand-link" onClick={onClick} title={t('brand.home')}>{inner}</button>
     : <div className="brand">{inner}</div>;
 }
