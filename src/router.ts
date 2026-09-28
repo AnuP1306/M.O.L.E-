@@ -2,7 +2,7 @@
 import { useSyncExternalStore } from 'react';
 import type { RoutePath } from './types';
 
-const ROUTES: RoutePath[] = ['/', '/login', '/request-access', '/access-created', '/site-manager', '/site-manager/setup', '/dispatcher', '/rescue'];
+const ROUTES: RoutePath[] = ['/', '/login', '/request-access', '/access-created', '/site-manager', '/site-manager/setup', '/site-manager/slam', '/site-manager/operations', '/dispatcher', '/rescue'];
 
 export function currentRoute(): RoutePath {
   const hash = window.location.hash.replace(/^#/, '') || '/';

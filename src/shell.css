@@ -1064,6 +1064,8 @@
 .map-upload { margin-top: 12px; }
 .map-upload .dropzone { margin-bottom: 0; }
 
+.page-heading-actions { display: flex; gap: 8px; }
+
 /* ---- dispatcher roster ---- */
 .roster { margin-bottom: 12px; }
 
@@ -1101,6 +1103,23 @@
 .roster-row input:focus,
 .roster-row select:focus { border-color: var(--green); }
 .roster-row .has-error input { border-color: var(--red); }
+
+.roster-head.location-head,
+.roster-row.location-row { grid-template-columns: 1.6fr 1.1fr .8fr 34px; }
+
+.kv-clickable {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.kv-clickable:last-child { border-bottom: 0; }
+.kv-clickable:hover span,
+.kv-clickable:hover b { color: var(--green); }
 
 .row-remove {
   height: 38px;

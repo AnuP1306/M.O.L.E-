@@ -1,9 +1,11 @@
 import { LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+
 import { navigate } from '../router';
 import { useSession } from '../state/SessionContext';
 import { MineSelector } from './MineSelector';
 
+/** Compact mine selector + logout, placed inside the existing dashboard top bar. */
 export function SessionControls() {
   const { t } = useTranslation();
   const { user, logout } = useSession();
@@ -16,13 +18,19 @@ export function SessionControls() {
   return (
     <div className="session-controls">
       <MineSelector compact />
+
       <button
         className="icon-btn theme-btn"
         onClick={onLogout}
-        title={t('session.signOut', { name: user?.name ?? '' })}
+        title={t('session.signOut', {
+          name: user?.name ?? '',
+        })}
       >
         <LogOut size={14} />
-        <span>{t('actions.logout').toUpperCase()}</span>
+
+        <span>
+          {t('actions.logout').toUpperCase()}
+        </span>
       </button>
     </div>
   );

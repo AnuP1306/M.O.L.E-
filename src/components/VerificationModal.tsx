@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
+
 import { CheckCircle2, Loader2 } from 'lucide-react';
+
 import { useTranslation } from 'react-i18next';
 
 const STEPS = ['officerId', 'mineDetails', 'roleAccess'] as const;
+
 export const VERIFY_STEP_MS = 800;
 
 export function VerificationModal({
@@ -11,6 +14,7 @@ export function VerificationModal({
   phase: 'verifying' | 'verified';
 }) {
   const { t } = useTranslation();
+
   const [done, setDone] = useState(0);
 
   useEffect(() => {
@@ -37,14 +41,21 @@ export function VerificationModal({
         {phase === 'verifying' ? (
           <>
             <Loader2 size={40} className="verify-spin" />
-            <p className="verify-title">{t('verification.verifying')}</p>
+
+            <p className="verify-title">
+              {t('verification.verifying')}
+            </p>
 
             <ul className="verify-steps">
               {STEPS.map((step, index) => (
                 <li
                   key={step}
                   className={
-                    index < done ? 'done' : index === done ? 'active' : ''
+                    index < done
+                      ? 'done'
+                      : index === done
+                        ? 'active'
+                        : ''
                   }
                 >
                   <span className="verify-dot" />
@@ -56,7 +67,10 @@ export function VerificationModal({
             <div className="verify-bar">
               <i
                 style={{
-                  width: `${Math.max(8, (done / STEPS.length) * 100)}%`,
+                  width: `${Math.max(
+                    8,
+                    (done / STEPS.length) * 100
+                  )}%`,
                 }}
               />
             </div>
@@ -64,8 +78,14 @@ export function VerificationModal({
         ) : (
           <>
             <CheckCircle2 size={44} className="verify-check" />
-            <p className="verify-title ok">{t('verification.verified')}</p>
-            <p className="verify-sub">{t('verification.created')}</p>
+
+            <p className="verify-title ok">
+              {t('verification.verified')}
+            </p>
+
+            <p className="verify-sub">
+              {t('verification.created')}
+            </p>
           </>
         )}
       </div>

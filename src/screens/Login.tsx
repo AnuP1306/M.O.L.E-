@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from 'react';
+
 import { ArrowLeft, Eye, EyeOff, KeyRound, LogIn, UserPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+
 import { PublicTopbar } from '../components/PublicTopbar';
-import { ROLE_HOME } from '../data/prototype';
 import { navigate } from '../router';
 import { useSession } from '../state/SessionContext';
 
@@ -29,22 +30,28 @@ export function Login() {
 
     if (!result.ok) {
       setError(
-  result.error === 'AUTHENTICATION FAILED · CHECK ID AND PASSWORD'
-    ? 'login.invalidCredentials'
-    : result.error
-);
+        result.error === 'AUTHENTICATION FAILED · CHECK ID AND PASSWORD'
+          ? 'login.invalidCredentials'
+          : result.error
+      );
       return;
     }
 
     clearCreatedCredentials();
-    navigate(ROLE_HOME[result.user.role]);
+
+    // Keep post-disaster routing logic.
+    // AppShell decides the correct landing screen for the user's role/mine state.
+    navigate('/');
   };
 
   return (
     <div className="app shell">
       <PublicTopbar
         right={
-          <button className="btn small" onClick={() => navigate('/')}>
+          <button
+            className="btn small"
+            onClick={() => navigate('/')}
+          >
             <ArrowLeft size={13} /> {t('login.home')}
           </button>
         }
@@ -60,7 +67,10 @@ export function Login() {
 
           <form onSubmit={submit} noValidate>
             <label className="field">
-              <span className="field-label">{t('login.officerId')}</span>
+              <span className="field-label">
+                {t('login.officerId')}
+              </span>
+
               <input
                 value={loginId}
                 onChange={(e) => {
@@ -74,7 +84,10 @@ export function Login() {
             </label>
 
             <label className="field">
-              <span className="field-label">{t('login.password')}</span>
+              <span className="field-label">
+                {t('login.password')}
+              </span>
+
               <span className="password-wrap">
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -86,19 +99,29 @@ export function Login() {
                   autoComplete="current-password"
                   placeholder={t('login.passwordPlaceholder')}
                 />
+
                 <button
                   type="button"
                   className="eye-btn"
                   onClick={() => setShowPassword((v) => !v)}
-                  title={showPassword ? t('login.hidePassword') : t('login.showPassword')}
+                  title={
+                    showPassword
+                      ? t('login.hidePassword')
+                      : t('login.showPassword')
+                  }
                 >
-                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  {showPassword ? (
+                    <EyeOff size={15} />
+                  ) : (
+                    <Eye size={15} />
+                  )}
                 </button>
               </span>
             </label>
 
             <div className="remember-row">
               <span>{t('login.rememberDevice')}</span>
+
               <button
                 type="button"
                 className={`toggle ${remember ? 'on' : ''}`}
@@ -112,12 +135,15 @@ export function Login() {
             </div>
 
             {error && (
-  <div className="form-error" role="alert">
-    {error.startsWith('login.') ? t(error) : error}
-  </div>
-)}
+              <div className="form-error" role="alert">
+                {error.startsWith('login.') ? t(error) : error}
+              </div>
+            )}
 
-            <button type="submit" className="btn primary big full">
+            <button
+              type="submit"
+              className="btn primary big full"
+            >
               <LogIn size={15} /> {t('login.submit')}
             </button>
 
@@ -127,7 +153,8 @@ export function Login() {
                 className="link-btn"
                 onClick={() => navigate('/request-access')}
               >
-                <UserPlus size={12} /> {t('login.requestAccess')}
+                <UserPlus size={12} />
+                {t('login.requestAccess')}
               </button>
 
               <button
@@ -140,7 +167,9 @@ export function Login() {
             </div>
 
             {forgotOpen && (
-              <div className="form-info">{t('login.resetHelp')}</div>
+              <div className="form-info">
+                {t('login.resetHelp')}
+              </div>
             )}
           </form>
         </section>

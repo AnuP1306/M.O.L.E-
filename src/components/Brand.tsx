@@ -13,7 +13,15 @@ export function Brand({ onClick }: { onClick?: () => void }) {
     </>
   );
 
-  return onClick
-    ? <button className="brand brand-link" onClick={onClick} title={t('brand.home')}>{inner}</button>
-    : <div className="brand">{inner}</div>;
+  return onClick ? (
+    <button
+      className="brand brand-link"
+      onClick={onClick}
+      title={t('brand.home')}
+    >
+      {inner}
+    </button>
+  ) : (
+    <div className="brand">{inner}</div>
+  );
 }

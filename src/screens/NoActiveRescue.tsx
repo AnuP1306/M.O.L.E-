@@ -1,8 +1,12 @@
 import { ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+
 import { WorkspaceHeader } from '../components/WorkspaceHeader';
 import { useSession } from '../state/SessionContext';
 
+/**
+ * Rescue Operator landing while no rescue operation has been declared.
+ */
 export function NoActiveRescue() {
   const { t } = useTranslation();
   const { user, selectedMine } = useSession();
@@ -12,15 +16,25 @@ export function NoActiveRescue() {
   return (
     <div className="app shell">
       <WorkspaceHeader />
+
       <main className="shell-main">
         <section className="panel idle-panel">
-          <div className="idle-icon"><ShieldCheck size={34} /></div>
-          <div className="eyebrow">
-            {t('rescueIdle.operator')} · {selectedMine.name.toUpperCase()}
+          <div className="idle-icon">
+            <ShieldCheck size={34} />
           </div>
+
+          <div className="eyebrow">
+            {t('rescueIdle.operator')} ·{' '}
+            {selectedMine.name.toUpperCase()}
+          </div>
+
           <h1>{t('rescueIdle.title')}</h1>
+
           <p>{t('rescueIdle.description')}</p>
-          <span className="badge safe">{t('rescueIdle.standby')}</span>
+
+          <span className="badge safe">
+            {t('rescueIdle.standby')}
+          </span>
         </section>
       </main>
     </div>
