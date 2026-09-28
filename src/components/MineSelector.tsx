@@ -1,46 +1,55 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, Pickaxe } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useSession } from '../state/SessionContext';
 import type { Mine } from '../types';
 
-const statusTone = (mine: Mine) => (mine.status === 'OPERATIONAL' ? 'safe' : mine.status === 'ADVISORY' ? 'critical' : 'warning');
+const statusTone = (mine: Mine) =>
+  mine.status === 'OPERATIONAL' ? 'safe'
+    : mine.status === 'ADVISORY' ? 'critical'
+      : 'warning';
 
-/**
- * Reusable "CURRENT MINE" selector.
- *  - full   : label + full mine name (workspace headers)
- *  - compact: short name only (inside the rescue dashboard top bar)
- * Selection is stored in the session (and localStorage) so it persists across pages.
- */
 export function MineSelector({ compact = false }: { compact?: boolean }) {
+  const { t } = useTranslation();
   const { mines, selectedMine, selectMine } = useSession();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
-    const onPointer = (e: MouseEvent) => { if (!rootRef.current?.contains(e.target as Node)) setOpen(false); };
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    const onPointer = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
     document.addEventListener('mousedown', onPointer);
     document.addEventListener('keydown', onKey);
-    return () => { document.removeEventListener('mousedown', onPointer); document.removeEventListener('keydown', onKey); };
+    return () => {
+      document.removeEventListener('mousedown', onPointer);
+      document.removeEventListener('keydown', onKey);
+    };
   }, [open]);
 
   if (!selectedMine) return null;
+
   const canSwitch = mines.length > 1;
   const shortName = selectedMine.name.replace(' Underground Mine', '');
+  const displayStatus = (status: string) =>
+    t(`setupOptions.${status}`, { defaultValue: status });
 
   return (
     <div className={`mine-select ${compact ? 'compact' : ''}`} ref={rootRef}>
       <button
         className={`mine-select-btn ${open ? 'open' : ''}`}
-        onClick={() => canSwitch && setOpen((v) => !v)}
+        onClick={() => canSwitch && setOpen((value) => !value)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        title={`Current mine: ${selectedMine.name}`}
+        title={t('mineSelector.currentMineTitle', { name: selectedMine.name })}
       >
         <Pickaxe size={compact ? 13 : 15} />
         <span className="mine-select-text">
-          {!compact && <small>CURRENT MINE</small>}
+          {!compact && <small>{t('mineSelector.currentMine')}</small>}
           <b>{compact ? shortName.toUpperCase() : selectedMine.name}</b>
         </span>
         {canSwitch && <ChevronDown size={13} className="mine-select-caret" />}
@@ -48,7 +57,7 @@ export function MineSelector({ compact = false }: { compact?: boolean }) {
 
       {open && (
         <div className="mine-select-menu" role="listbox">
-          <div className="mine-select-menu-head">SELECT MINE</div>
+          <div className="mine-select-menu-head">{t('mineSelector.selectMine')}</div>
           {mines.map((mine) => (
             <button
               key={mine.id}
@@ -61,7 +70,9 @@ export function MineSelector({ compact = false }: { compact?: boolean }) {
                 <b>{mine.name}</b>
                 <small>{mine.officialMineCode} · {mine.district}</small>
               </span>
-              <span className={`badge ${statusTone(mine)}`}>{mine.status}</span>
+              <span className={`badge ${statusTone(mine)}`}>
+                {displayStatus(mine.status)}
+              </span>
             </button>
           ))}
         </div>
