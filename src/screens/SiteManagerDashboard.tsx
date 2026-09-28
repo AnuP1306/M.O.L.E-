@@ -47,18 +47,47 @@ export function SiteManagerDashboard() {
 
           <section className="panel">
             <div className="panel-title"><span><MapIcon size={13} /></span><b>Mine map</b><i /></div>
-            <div className="kv"><span>CURRENT SOURCE</span><b>{setup.mapMethod === 'UPLOAD' && setup.mapFileName ? 'UPLOADED MAP' : 'NOT MAPPED'}</b></div>
+            <div className="kv"><span>MAP STATUS</span><b>{setup.mapStatus === 'COMPLETE' ? 'COMPLETE' : 'NOT MAPPED'}</b></div>
+            <div className="kv"><span>CURRENT SOURCE</span><b>{setup.mapStatus === 'COMPLETE' ? (setup.mapMethod === 'UPLOAD' ? 'UPLOADED MAP' : 'SLAM MAPPED') : 'NOT MAPPED'}</b></div>
             {setup.mapFileName && <div className="kv"><span>FILE</span><b><FileText size={13} /> {setup.mapFileName}</b></div>}
+            {setup.lastMappedAt && <div className="kv"><span>LAST MAPPED</span><b>{new Date(setup.lastMappedAt).toLocaleString()}</b></div>}
+            {setup.previousMappedAt && <div className="kv"><span>LAST UPDATE</span><b>{new Date(setup.previousMappedAt).toLocaleString()}</b></div>}
             <input ref={fileRef} type="file" hidden accept=".pdf,.png,.jpg,.jpeg,.dwg,.dxf"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                saveMineSetup({ ...setup, mapMethod: 'UPLOAD', mapFileName: file.name });
-                e.currentTarget.value = '';
-              }} />
+             onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+            
+              const now = new Date().toISOString();
+            
+              saveMineSetup({
+                ...setup,
+                mapMethod: 'UPLOAD',
+                mapFileName: file.name,
+                mapStatus: 'COMPLETE',
+                previousMappedAt: setup.lastMappedAt ?? setup.previousMappedAt,
+                lastMappedAt: now,
+              });
+            
+              // Mark this as a NEW upload so the operations dashboard
+              // can show the one-time map-processing animation.
+              sessionStorage.setItem(
+                `mole-upload-map-pending-${selectedMine.id}`,
+                '1'
+              );
+            
+              e.currentTarget.value = '';
+            
+              // Immediately enter the pre-disaster operations dashboard.
+              navigate('/site-manager/operations');
+            }} />
             <div className="page-heading-actions" style={{ marginTop: 12 }}>
               <button className="btn small" type="button" onClick={() => fileRef.current?.click()}><Upload size={13} /> UPLOAD EXISTING MINE MAP</button>
-              <button className="btn small primary" type="button" onClick={() => navigate('/site-manager/slam')}><Radar size={13} /> START SLAM MAPPING</button>
+              <button className="btn small primary" type="button" onClick={() => navigate('/site-manager/slam')}>
+                <Radar size={13} /> {setup.mapStatus === 'COMPLETE' ? 'START NEW SLAM MAPPING' : 'START SLAM MAPPING'}
+              </button>
+              {setup.mapStatus === 'COMPLETE' && (
+                <button className="btn small" type="button" onClick={() => navigate('/site-manager/operations')}><MapIcon size={13} /> OPEN PRE-DISASTER DASHBOARD</button>
+              )}
             </div>
           </section>
 

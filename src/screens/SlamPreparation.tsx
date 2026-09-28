@@ -81,7 +81,19 @@ export function SlamPreparation() {
               type="button"
               className="btn primary big"
               disabled={!verified}
-              onClick={() => navigate('/site-manager/operations')}
+              onClick={() => {
+                try {
+                  sessionStorage.setItem(
+                    `mole-slam-map-pending-${selectedMine.id}`,
+                    '1'
+                  );
+                } catch {
+                  // Continue to the operations page; App will still show the
+                  // normal mapping confirmation for an unmapped mine.
+                }
+
+                navigate('/site-manager/operations');
+              }}
             >
               <Radar size={15} /> START SLAM MAPPING
             </button>

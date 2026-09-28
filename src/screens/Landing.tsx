@@ -7,7 +7,7 @@ const capabilities = [
   { icon: <MapIcon size={18} />, title: 'UNDERGROUND MINE MAPPING', text: 'Keep an up-to-date layout of galleries, shafts and junctions.' },
   { icon: <Users size={18} />, title: 'DAILY WORKER DEPLOYMENT', text: 'Record which personnel are deployed to which underground areas each shift.' },
   { icon: <Wind size={18} />, title: 'ENVIRONMENTAL MONITORING', text: 'Watch methane, CO, oxygen, temperature and water-ingress readings.' },
-  { icon: <Radio size={18} />, title: 'REMOTE ROVER OPERATIONS', text: 'Drive the rescue rover from the surface with camera, LiDAR and drill controls.' },
+  { icon: <Radio size={18} />, title: 'REMOTE ROVER OPERATIONS', text: 'Drive the rescue rover from the surface with camera, LiDAR and robotic arm controls.' },
   { icon: <Crosshair size={18} />, title: 'SURVIVOR DETECTION', text: 'Flag possible survivors from thermal and vital-sign cues.' },
   { icon: <LifeBuoy size={18} />, title: 'EMERGENCY RESCUE COORDINATION', text: 'Coordinate hazards, rescue targets and missions during an incident.' },
 ];

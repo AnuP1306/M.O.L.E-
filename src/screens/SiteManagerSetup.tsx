@@ -9,7 +9,7 @@ import type { MineSetup, RoverEntry, TeamMember } from '../types';
 const WORKING_METHODS = ['Bord and Pillar', 'Longwall', 'Continuous miner', 'Mixed methods'];
 const GASSINESS = ['Degree I', 'Degree II', 'Degree III'];
 const DESIGNATIONS = ['Mine Manager', 'Assistant Manager', 'Safety Officer', 'Rescue In-charge', 'Ventilation Officer', 'Control Room In-charge'];
-const PAYLOADS = ['Thermal camera', 'Normal camera', 'LiDAR', 'Gas sensor array', 'Front drill'];
+const PAYLOADS = ['Thermal camera', 'Normal camera', 'LiDAR', 'Gas sensor array', 'Robotic arm'];
 const MAX_ROVERS = 10;
 
 interface FormState {
@@ -23,7 +23,7 @@ interface FormState {
 
 const blankMember = (): TeamMember => ({ name: '', designation: '', mobile: '', email: '' });
 const roverName = (i: number) => `MOLE-${String(i + 1).padStart(2, '0')}`;
-const blankRover = (i: number): RoverEntry => ({ roverId: roverName(i), serial: '', payloads: ['Thermal camera', 'LiDAR', 'Gas sensor array'] });
+const blankRover = (i: number): RoverEntry => ({ roverId: '', serial: '', payloads: [] });
 
 type Errors = Record<string, string>;
 
@@ -41,18 +41,28 @@ function Field({ label, required, error, hint, children }: { label: string; requ
 const positiveInt = (v: string) => /^\d+$/.test(v.trim()) && Number(v) > 0;
 
 export function SiteManagerSetup() {
-  const { user, selectedMine, mineSetups, saveMineSetup } = useSession();
+  const { user, selectedMine, mineSetups, saveMineSetup, markSiteManagerSetupCompleted, siteManagerSetupCompleted } = useSession();
   const saved = selectedMine ? mineSetups[selectedMine.id] : undefined;
+  const editingExistingSetup = siteManagerSetupCompleted && !!saved;
 
-  const [form, setForm] = useState<FormState>(() => saved ? {
-    workingMethod: saved.workingMethod, gassiness: saved.gassiness, levels: String(saved.levels), maxDepth: String(saved.maxDepth),
-    workforce: String(saved.workforcePerShift), shifts: String(saved.shiftsPerDay),
-    panels: String(saved.panels ?? ''), galleries: String(saved.galleries ?? ''), workingAreas: String(saved.workingAreas ?? ''),
-    team: saved.team, rovers: saved.rovers, mapMethod: saved.mapMethod, mapFileName: saved.mapFileName ?? '',
+  const numberField = (value: unknown): string => {
+    if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+    if (typeof value === 'string' && /^\d+$/.test(value.trim())) return value.trim();
+    if (Array.isArray(value)) return String(value.length);
+    return '';
+  };
+
+  const [form, setForm] = useState<FormState>(() => editingExistingSetup && saved ? {
+    workingMethod: saved.workingMethod ?? '', gassiness: saved.gassiness ?? '', levels: numberField(saved.levels), maxDepth: numberField(saved.maxDepth),
+    workforce: numberField(saved.workforcePerShift), shifts: numberField(saved.shiftsPerDay),
+    panels: numberField(saved.panels), galleries: numberField(saved.galleries), workingAreas: numberField(saved.workingAreas),
+    team: Array.isArray(saved.team) && saved.team.length ? saved.team : [blankMember()],
+    rovers: Array.isArray(saved.rovers) && saved.rovers.length ? saved.rovers : [blankRover(0)],
+    mapMethod: saved.mapMethod ?? '', mapFileName: saved.mapFileName ?? '',
   } : {
-    workingMethod: '', gassiness: '', levels: '', maxDepth: '', workforce: '', shifts: '3',
+    workingMethod: '', gassiness: '', levels: '', maxDepth: '', workforce: '', shifts: '',
     panels: '', galleries: '', workingAreas: '',
-    team: [{ name: user?.name ?? '', designation: user?.designation ?? '', mobile: user?.mobile ?? '', email: user?.email ?? '' }],
+    team: [blankMember()],
     rovers: [blankRover(0)], mapMethod: '', mapFileName: '',
   });
   const [errors, setErrors] = useState<Errors>({});
@@ -125,8 +135,9 @@ export function SiteManagerSetup() {
         mobile: m.mobile || randomMobile(),
         email: m.email || emailFor(m.name || 'officer'),
       })),
-      rovers: f.rovers.map((r) => ({
+      rovers: f.rovers.map((r, i) => ({
         ...r,
+        roverId: r.roverId || roverName(i),
         serial: r.serial || `SR-${randomInt(1000, 9999)}`,
         payloads: r.payloads.length ? r.payloads : ['Thermal camera', 'LiDAR', 'Gas sensor array'],
       })),
@@ -151,10 +162,16 @@ export function SiteManagerSetup() {
       panels: Number(form.panels), galleries: Number(form.galleries), workingAreas: Number(form.workingAreas),
       team: form.team.map((m) => ({ name: m.name.trim(), designation: m.designation.trim(), mobile: m.mobile.trim(), email: m.email.trim() })),
       rovers: form.rovers.map((r) => ({ ...r, roverId: r.roverId.trim(), serial: r.serial.trim() })),
+      // Preserve an already-existing mine map when a newly created Site Manager
+      // account completes setup for a mine that was configured previously.
       mapMethod: saved?.mapMethod ?? 'SLAM',
       mapFileName: saved?.mapFileName,
+      mapStatus: saved?.mapStatus,
+      lastMappedAt: saved?.lastMappedAt,
+      previousMappedAt: saved?.previousMappedAt,
     };
     saveMineSetup(setup);
+    markSiteManagerSetupCompleted();
     navigate('/site-manager');
   };
 
@@ -169,7 +186,7 @@ export function SiteManagerSetup() {
           </div>
           <div className="page-heading-actions">
             <button className="btn small" type="button" onClick={autoFill}><Sparkles size={13} /> AUTO-FILL</button>
-            {saved && <button className="btn small" type="button" onClick={() => navigate('/site-manager')}><X size={13} /> CANCEL</button>}
+            {editingExistingSetup && <button className="btn small" type="button" onClick={() => navigate('/site-manager')}><X size={13} /> CANCEL</button>}
           </div>
         </div>
 
@@ -253,7 +270,7 @@ export function SiteManagerSetup() {
           </section>
 
           <div className="form-actions">
-            <button type="submit" className="btn primary big"><Save size={15} /> {saved ? 'SAVE SETUP' : 'COMPLETE SETUP'}</button>
+            <button type="submit" className="btn primary big"><Save size={15} /> {editingExistingSetup ? 'SAVE SETUP' : 'COMPLETE SETUP'}</button>
           </div>
         </form>
       </main>

@@ -1,5 +1,5 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import { CheckCircle2, LayoutGrid, MapPin, Pencil, Plus, Send, Sparkles, X } from 'lucide-react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { CheckCircle2, FileImage, LayoutGrid, LoaderCircle, MapPin, Pencil, Plus, Send, Sparkles, Upload, X } from 'lucide-react';
 import { WorkspaceHeader } from '../components/WorkspaceHeader';
 import { DEPLOYMENT_REMARK_SAMPLES, pick, randomInt, randomName } from '../data/autofill';
 import { useSession } from '../state/SessionContext';
@@ -58,11 +58,34 @@ export function DispatcherDeployment() {
   const [locations, setLocations] = useState<LocationAllocation[]>(() => buildDefaultLocations(setup));
   const [errors, setErrors] = useState<Errors>({});
   const [notice, setNotice] = useState('');
+  const [attendanceProcessing, setAttendanceProcessing] = useState(false);
+  const attendanceImportRef = useRef(false);
+  const attendanceFileRef = useRef<HTMLInputElement | null>(null);
+
+  // On login, go straight to today's Shift Summary when today's details already exist.
+  // If nothing has been recorded for today, remain on the entry form.
+  useEffect(() => {
+    if (!selectedMine) return;
+    const existingToday = deployments.find((d) => d.mineId === selectedMine.id && d.date === today());
+    if (!existingToday) return;
+
+    setDate(existingToday.date);
+    setShift(existingToday.shift);
+    setIncharge(existingToday.shiftIncharge);
+    setRemarks(existingToday.remarks);
+    setLocations(existingToday.allocations);
+    setViewing(existingToday);
+    setPhase('confirm');
+  }, [selectedMine?.id]);
 
   // When the date / shift picked matches an already-saved deployment for this mine, load it so the
   // dispatcher edits the real numbers instead of starting from a blank roster.
   useEffect(() => {
     if (!selectedMine) return;
+    if (attendanceImportRef.current) {
+      attendanceImportRef.current = false;
+      return;
+    }
     const existing = deployments.find((d) => d.mineId === selectedMine.id && d.date === date && d.shift === shift);
     if (existing) {
       setIncharge(existing.shiftIncharge);
@@ -100,6 +123,37 @@ export function DispatcherDeployment() {
       return base.map((l) => ({ ...l, workers: l.workers || randomInt(3, 18) }));
     });
     setErrors({});
+  };
+
+  const handleAttendanceUpload = (file?: File) => {
+    if (!file || attendanceProcessing) return;
+
+    setAttendanceProcessing(true);
+    setNotice('');
+    setErrors({});
+
+    window.setTimeout(() => {
+      // Prototype flow only: this simulates the values that an attendance-log
+      // OCR pass would extract. No image text is actually parsed yet.
+      const base = buildDefaultLocations(setup);
+      const fallback = [
+        blankLocation('PANEL', 1),
+        blankLocation('GALLERY', 1),
+        blankLocation('WORKING_AREA', 1),
+      ];
+      const source = base.length ? base : fallback;
+
+      attendanceImportRef.current = true;
+      setDate(today());
+      setShift(SHIFTS[0]);
+      setIncharge(randomName());
+      setRemarks('Attendance log imported for the selected shift.');
+      setLocations(source.map((location) => ({
+        ...location,
+        workers: randomInt(5, 20),
+      })));
+      setAttendanceProcessing(false);
+    }, 1800);
   };
 
   const totalWorkers = (list: LocationAllocation[]) => list.reduce((sum, l) => sum + (Number(l.workers) || 0), 0);
@@ -146,8 +200,8 @@ export function DispatcherDeployment() {
         <main className="shell-main form-page wide">
           <div className="page-heading">
             <div>
-              <div className="eyebrow">DISPATCHER · {selectedMine.name.toUpperCase()}</div>
-              <h1>DEPLOYMENT CONFIRMED</h1>
+              <div className="eyebrow">SHIFT OPERATOR · {selectedMine.name.toUpperCase()}</div>
+              <h1>SHIFT SUMMARY</h1>
             </div>
           </div>
 
@@ -177,8 +231,8 @@ export function DispatcherDeployment() {
           )}
 
           <div className="form-actions">
-            <button type="button" className="btn ghost big" onClick={() => setPhase('form')}>BACK TO ROSTER</button>
-            <button type="button" className="btn primary big" onClick={editAgain}><Pencil size={15} /> EDIT / UPDATE DEPLOYMENT</button>
+            <button type="button" className="btn ghost big" onClick={() => setPhase('form')}>BACK TO SHIFT DETAILS</button>
+            <button type="button" className="btn primary big" onClick={editAgain}><Pencil size={15} /> EDIT / UPDATE SHIFT</button>
           </div>
 
           {recent.length > 0 && (
@@ -200,10 +254,25 @@ export function DispatcherDeployment() {
   return (
     <div className="app shell">
       <WorkspaceHeader />
+      {attendanceProcessing && (
+        <div className="mapping-confirm-overlay">
+          <div className="mapping-confirm-modal">
+            <div className="mapping-confirm-icon">
+              <FileImage size={28} />
+            </div>
+            <span className="eyebrow">ATTENDANCE LOG PROCESSING</span>
+            <h2>EXTRACTING TEXT FROM IMAGE</h2>
+            <p>Reading the uploaded attendance log and preparing the shift details...</p>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 18, color: 'var(--green)' }}>
+              <LoaderCircle size={22} />
+            </div>
+          </div>
+        </div>
+      )}
       <main className="shell-main form-page wide">
         <div className="page-heading">
           <div>
-            <div className="eyebrow">DISPATCHER · {selectedMine.name.toUpperCase()}</div>
+            <div className="eyebrow">SHIFT OPERATOR · {selectedMine.name.toUpperCase()}</div>
             <h1>DAILY UNDERGROUND WORKER DEPLOYMENT</h1>
           </div>
           <div className="page-heading-actions">
@@ -227,7 +296,31 @@ export function DispatcherDeployment() {
           </section>
 
           <section className="panel">
-            <div className="panel-title"><span>02</span><b>Location allocation · {locations.length}</b><i /></div>
+            <div className="panel-title"><span>02</span><b>Attendance log</b><i /></div>
+            <div className="form-note">Upload the attendance log maintained for the shift to prefill deployment details. Text extraction is simulated in this prototype.</div>
+            <input
+              ref={attendanceFileRef}
+              type="file"
+              accept="image/png,image/jpeg,image/jpg"
+              hidden
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                handleAttendanceUpload(file);
+                e.currentTarget.value = '';
+              }}
+            />
+            <button
+              type="button"
+              className="btn small"
+              onClick={() => attendanceFileRef.current?.click()}
+              disabled={attendanceProcessing}
+            >
+              <Upload size={13} /> UPLOAD ATTENDANCE LOG IMAGE
+            </button>
+          </section>
+
+          <section className="panel">
+            <div className="panel-title"><span>03</span><b>Location allocation · {locations.length}</b><i /></div>
             {!setup && <div className="form-note">The Site Manager has not saved a mine setup yet, so no default panels / galleries are listed. Add locations manually below.</div>}
             {errors.locations && <div className="form-error">{errors.locations}</div>}
             <div className="roster">
@@ -257,14 +350,14 @@ export function DispatcherDeployment() {
           </section>
 
           <section className="panel">
-            <div className="panel-title"><span>03</span><b>Remarks (optional)</b><i /></div>
+            <div className="panel-title"><span>04</span><b>Remarks (optional)</b><i /></div>
             <label className="field">
               <textarea rows={3} value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder="Special instructions, restricted areas, equipment issued…" />
             </label>
           </section>
 
           <div className="form-actions">
-            <button type="submit" className="btn primary big"><Send size={15} /> CONFIRM DEPLOYMENT</button>
+            <button type="submit" className="btn primary big"><Send size={15} /> CONFIRM SHIFT DETAILS</button>
           </div>
         </form>
 

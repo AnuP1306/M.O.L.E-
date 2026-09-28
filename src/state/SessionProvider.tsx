@@ -12,6 +12,7 @@ const KEY_MINE = 'mole.selectedMine.v1';
 const KEY_ACCOUNTS = 'mole.accounts.v1';
 const KEY_MINES = 'mole.mines.v1';
 const KEY_SETUPS = 'mole.mineSetups.v1';
+const KEY_ACCOUNT_SETUP = 'mole.accountSetupCompleted.v1';
 const KEY_DEPLOYMENTS = 'mole.deployments.v1';
 const KEY_MISSION = 'mole.activeMission.v1';
 const KEY_CREATED = 'mole.lastCreated.v1'; // sessionStorage only
@@ -72,8 +73,25 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [selectedMineId, setSelectedMineId] = useState<string | null>(() => readJSON<string>(getStore('local'), KEY_MINE));
   const [createdCredentials, setCreatedCredentials] = useState<CreatedCredentials | null>(() => readJSON<CreatedCredentials>(getStore('session'), KEY_CREATED));
   const [mineSetups, setMineSetups] = useState<Record<string, MineSetup>>(() => readJSON<Record<string, MineSetup>>(getStore('local'), KEY_SETUPS) ?? {});
+  const [accountSetupCompleted, setAccountSetupCompleted] = useState<Record<string, boolean>>(
+    () => readJSON<Record<string, boolean>>(getStore('local'), KEY_ACCOUNT_SETUP) ?? {}
+  );
   const [deployments, setDeployments] = useState<Deployment[]>(() => readJSON<Deployment[]>(getStore('local'), KEY_DEPLOYMENTS) ?? []);
-  const [activeMission, setActiveMission] = useState<ActiveMission | null>(() => readJSON<ActiveMission>(getStore('local'), KEY_MISSION));
+  // Raw mission record as persisted in localStorage. This is a SINGLE global
+  // slot (one mine can have a live mission at a time in this prototype), so it
+  // must never be exposed to consumers as-is — see `activeMission` below,
+  // which scopes it down to the currently selected mine. Reading/using
+  // `rawActiveMission` directly anywhere outside this file would reintroduce
+  // mission state leaking across mines/accounts.
+  const [rawActiveMission, setRawActiveMission] = useState<ActiveMission | null>(() => {
+    const stored = readJSON<ActiveMission>(getStore('local'), KEY_MISSION);
+    if (!stored || !stored.mineId) return null;
+    return {
+      ...stored,
+      status: stored.status ?? 'DECLARED',
+      rescueProgress: Number.isFinite(stored.rescueProgress) ? stored.rescueProgress : 0,
+    };
+  });
 
   const allMines = useMemo(() => [...MINES, ...customMines], [customMines]);
   const mines = useMemo(() => (user ? allMines.filter((m) => user.assignedMineIds.includes(m.id)) : []), [user, allMines]);
@@ -149,6 +167,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setAccounts(nextAccounts);
     writeJSON(getStore('local'), KEY_ACCOUNTS, nextAccounts);
 
+        // A newly created account must complete its own first-time Site Manager setup,
+    // even when the selected mine already has a setup created by another officer.
+    if (account.user.role === 'SITE_MANAGER') {
+      setAccountSetupCompleted((current) => {
+        const next = { ...current, [account.user.id]: false };
+        writeJSON(getStore('local'), KEY_ACCOUNT_SETUP, next);
+        return next;
+      });
+    }
+
     const credentials: CreatedCredentials = { loginId, password, name: account.user.name, role: account.user.role, mineName: mine.name };
     setCreatedCredentials(credentials);
     writeJSON(getStore('session'), KEY_CREATED, credentials);
@@ -169,6 +197,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const markSiteManagerSetupCompleted = useCallback(() => {
+    if (!user || user.role !== 'SITE_MANAGER') return;
+  
+    setAccountSetupCompleted((current) => {
+      const next = { ...current, [user.id]: true };
+      writeJSON(getStore('local'), KEY_ACCOUNT_SETUP, next);
+      return next;
+    });
+  }, [user]);
+
   /* ---------------- Dispatcher deployments ---------------- */
   const saveDeployment = useCallback((input: DeploymentInput) => {
     if (!selectedMine || !user) return null;
@@ -186,33 +224,130 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return { updated: !!existing, deployment };
   }, [deployments, selectedMine, user]);
 
-  /* ---------------- Rescue mission flag ----------------
-     The emergency-declaration workflow will set this. Until then it can be switched from the
-     browser console (window.moleDev.declareMission() / endMission()) so the rescue console can be opened. */
+  /* ---------------- Rescue mission flag ---------------- */
+  const declareMission = useCallback((input: Omit<ActiveMission, 'id' | 'mineId' | 'declaredAt' | 'status' | 'rescueProgress'>) => {
+    if (!selectedMine) return null;
+    const mission: ActiveMission = {
+      ...input,
+      id: `MSN-${Date.now().toString(36).toUpperCase()}`,
+      mineId: selectedMine.id,
+      declaredAt: new Date().toISOString(),
+      status: 'DECLARED',
+      rescueProgress: 0,
+    };
+    setRawActiveMission(mission);
+    writeJSON(getStore('local'), KEY_MISSION, mission);
+    return mission;
+  }, [selectedMine]);
+
+  const updateMissionStatus = useCallback((status: ActiveMission['status']) => {
+    setRawActiveMission((current) => {
+      if (!current) return current;
+      const next = { ...current, status };
+      writeJSON(getStore('local'), KEY_MISSION, next);
+      return next;
+    });
+  }, []);
+
+  const updateMissionProgress = useCallback((progress: number) => {
+    setRawActiveMission((current) => {
+      if (!current) return current;
+      const next = {
+        ...current,
+        rescueProgress: Math.max(0, Math.min(100, progress)),
+      };
+      writeJSON(getStore('local'), KEY_MISSION, next);
+      return next;
+    });
+  }, []);
+
+  /**
+   * Ends the mission for good: the mine returns to "no active mission" /
+   * pre-disaster state, and the Rescue Operator returns to
+   * "no active rescue operation". This clears the actual persisted state
+   * rather than merely hiding a screen behind an extra UI condition.
+   */
+  const endMission = useCallback(() => {
+    setRawActiveMission(null);
+    removeKey(getStore('local'), KEY_MISSION);
+  }, []);
+
   useEffect(() => {
     const dev = {
-      declareMission: (mineId?: string) => {
-        const mission: ActiveMission = { id: `MSN-${Date.now().toString(36).toUpperCase()}`, mineId, declaredAt: new Date().toISOString() };
-        setActiveMission(mission);
+      declareMission: (mineId: string) => {
+        if (!mineId) return;
+        const mission: ActiveMission = {
+          id: `MSN-${Date.now().toString(36).toUpperCase()}`,
+          mineId,
+          declaredAt: new Date().toISOString(),
+          incidentType: 'OTHER',
+          affectedArea: 'Undesignated area',
+          workersTrapped: 0,
+          timeDetected: new Date().toISOString(),
+          status: 'DECLARED',
+          rescueProgress: 0,
+        };
+        setRawActiveMission(mission);
         writeJSON(getStore('local'), KEY_MISSION, mission);
       },
-      endMission: () => { setActiveMission(null); removeKey(getStore('local'), KEY_MISSION); },
+      endMission: () => { setRawActiveMission(null); removeKey(getStore('local'), KEY_MISSION); },
     };
     (window as unknown as { moleDev?: typeof dev }).moleDev = dev;
-    const onStorage = (e: StorageEvent) => { if (e.key === KEY_MISSION) setActiveMission(readJSON<ActiveMission>(getStore('local'), KEY_MISSION)); };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== KEY_MISSION) return;
+      const stored = readJSON<ActiveMission>(getStore('local'), KEY_MISSION);
+      setRawActiveMission(
+        stored && stored.mineId
+          ? {
+              ...stored,
+              status: stored.status ?? 'DECLARED',
+              rescueProgress: Number.isFinite(stored.rescueProgress) ? stored.rescueProgress : 0,
+            }
+          : null,
+      );
+    };
     window.addEventListener('storage', onStorage);
     return () => { window.removeEventListener('storage', onStorage); delete (window as unknown as { moleDev?: unknown }).moleDev; };
   }, []);
 
-  const rescueActive = !!activeMission && (!activeMission.mineId || activeMission.mineId === selectedMine?.id);
+  const isCreatedAccount = !!user && accounts.some((account) => account.user.id === user.id);
+
+  const siteManagerSetupCompleted =
+    user?.role === 'SITE_MANAGER'
+      ? (
+          accountSetupCompleted[user.id] ??
+          // Existing seeded/demo accounts can continue using an already-configured
+          // mine. Newly created accounts never get this fallback.
+          (!isCreatedAccount && !!selectedMine && !!mineSetups[selectedMine.id])
+        )
+      : true;
+
+  /*
+   * MINE ISOLATION (critical): `rawActiveMission` is a single persisted slot
+   * that could, in principle, belong to any mine — a mission declared for
+   * Mine A must never be visible while Mine B or Mine C is selected. Every
+   * consumer of mission state must see the mine-scoped view below, never
+   * `rawActiveMission` directly, and an ended mission is never "active" for
+   * anyone. This is the single source of truth for that isolation rule.
+   */
+  const activeMission = useMemo(() => {
+    if (!rawActiveMission) return null;
+    if (rawActiveMission.status === 'ENDED') return null;
+    if (!selectedMine) return null;
+    if (rawActiveMission.mineId !== selectedMine.id) return null;
+    return rawActiveMission;
+  }, [rawActiveMission, selectedMine]);
+
+  const rescueActive = !!activeMission;
 
   const value: SessionValue = {
     user, mines, selectedMine, selectMine,
     login, logout,
     isLoginIdTaken, createAccount, createdCredentials, clearCreatedCredentials,
     mineSetups, saveMineSetup,
+    siteManagerSetupCompleted, markSiteManagerSetupCompleted,
     deployments, saveDeployment,
-    activeMission, rescueActive,
+    activeMission, declareMission, updateMissionStatus, updateMissionProgress, endMission, rescueActive,
   };
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

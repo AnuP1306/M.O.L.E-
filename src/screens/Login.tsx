@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { ArrowLeft, Eye, EyeOff, KeyRound, LogIn, UserPlus } from 'lucide-react';
 import { PublicTopbar } from '../components/PublicTopbar';
-import { ROLE_HOME } from '../data/prototype';
 import { navigate } from '../router';
 import { useSession } from '../state/SessionContext';
 
@@ -20,9 +19,11 @@ export function Login() {
     const result = login(loginId, password, remember);
     if (!result.ok) { setError(result.error); return; }
     clearCreatedCredentials();
-    navigate(ROLE_HOME[result.user.role]);
+    // Let AppShell's routing decide the correct landing screen for this role
+    // (e.g. a Site Manager whose mine is already mapped goes straight to the
+    // pre-disaster dashboard instead of being routed through mine setup / SLAM again).
+    navigate('/');
   };
-
   return (
     <div className="app shell">
       <PublicTopbar right={<button className="btn small" onClick={() => navigate('/')}><ArrowLeft size={13} /> HOME</button>} />
